@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <math.h>
 
 #define TAMANHO_TABULEIRO 8
 
@@ -13,7 +14,7 @@ typedef struct {
     int movida;   // Indica se a peça já foi movida (para roque e en passant)
 } Peca;
 
-// Variável global para armazenar o último movimento de Peão para verificar En Passant
+// Variáveis globais
 int ultimo_movimento_peao_x = -1;
 int ultimo_movimento_peao_y = -1;
 
@@ -48,7 +49,7 @@ void imprimirTabuleiro(char tabuleiro[TAMANHO_TABULEIRO][TAMANHO_TABULEIRO]) {
 }
 
 // Função para validar o movimento de uma peça
-int validarMovimento(Peca *peca, int nova_x, int nova_y, Peca pecas[]) {
+int validarMovimento(Peca *peca, int nova_x, int nova_y, Peca pecas[], char tabuleiro[TAMANHO_TABULEIRO][TAMANHO_TABULEIRO]) {
     // Verificar se a nova posição está dentro do tabuleiro
     if (nova_x < 0 || nova_x >= TAMANHO_TABULEIRO || nova_y < 0 || nova_y >= TAMANHO_TABULEIRO) {
         return 0;
@@ -58,30 +59,44 @@ int validarMovimento(Peca *peca, int nova_x, int nova_y, Peca pecas[]) {
     switch (peca->tipo) {
         case 'P': // Peão
             if (peca->cor == 'B') { // Peão branco
-                if (peca->x == 6 && nova_x == 4 && peca->y == nova_y) { // Primeiro movimento do Peão
+                if (peca->x == 6 && nova_x == 4 && peca->y == nova_y && tabuleiro[5][nova_y] == '.' && tabuleiro[4][nova_y] == '.') { // Primeiro movimento do Peão
                     return 1;
                 }
-                if (nova_x == peca->x - 1 && nova_y == peca->y) { // Movimento normal do Peão
+                if (nova_x == peca->x - 1 && nova_y == peca->y && tabuleiro[nova_x][nova_y] == '.') { // Movimento normal do Peão
                     return 1;
                 }
-                if (nova_x == peca->x - 1 && abs(nova_y - peca->y) == 1) { // Captura diagonal
+                if (nova_x == peca->x - 1 && abs(nova_y - peca->y) == 1 && tabuleiro[nova_x][nova_y] != '.') { // Captura diagonal
                     return 1;
                 }
             } else { // Peão preto
-                if (peca->x == 1 && nova_x == 3 && peca->y == nova_y) { // Primeiro movimento do Peão
+                if (peca->x == 1 && nova_x == 3 && peca->y == nova_y && tabuleiro[2][nova_y] == '.' && tabuleiro[3][nova_y] == '.') { // Primeiro movimento do Peão
                     return 1;
                 }
-                if (nova_x == peca->x + 1 && nova_y == peca->y) { // Movimento normal do Peão
+                if (nova_x == peca->x + 1 && nova_y == peca->y && tabuleiro[nova_x][nova_y] == '.') { // Movimento normal do Peão
                     return 1;
                 }
-                if (nova_x == peca->x + 1 && abs(nova_y - peca->y) == 1) { // Captura diagonal
+                if (nova_x == peca->x + 1 && abs(nova_y - peca->y) == 1 && tabuleiro[nova_x][nova_y] != '.') { // Captura diagonal
                     return 1;
                 }
             }
             break;
 
         case 'T': // Torre
-            if (nova_x == peca->x || nova_y == peca->y) { // Movimento horizontal ou vertical
+            if (nova_x == peca->x) { // Movimento vertical
+                int direcao = (nova_y > peca->y) ? 1 : -1;
+                for (int y = peca->y + direcao; y != nova_y; y += direcao) {
+                    if (tabuleiro[peca->x][y] != '.') {
+                        return 0; // Há uma peça no caminho
+                    }
+                }
+                return 1;
+            } else if (nova_y == peca->y) { // Movimento horizontal
+                int direcao = (nova_x > peca->x) ? 1 : -1;
+                for (int x = peca->x + direcao; x != nova_x; x += direcao) {
+                    if (tabuleiro[x][peca->y] != '.') {
+                        return 0; // Há uma peça no caminho
+                    }
+                }
                 return 1;
             }
             break;
@@ -95,12 +110,35 @@ int validarMovimento(Peca *peca, int nova_x, int nova_y, Peca pecas[]) {
 
         case 'B': // Bispo
             if (abs(nova_x - peca->x) == abs(nova_y - peca->y)) { // Movimento diagonal
+                int direcao_x = (nova_x > peca->x) ? 1 : -1;
+                int direcao_y = (nova_y > peca->y) ? 1 : -1;
+                for (int i = 1; i < abs(nova_x - peca->x); i++) {
+                    if (tabuleiro[peca->x + i * direcao_x][peca->y + i * direcao_y] != '.') {
+                        return 0; // Há uma peça no caminho
+                    }
+                }
                 return 1;
             }
             break;
 
         case 'Q': // Rainha
-            if (nova_x == peca->x || nova_y == peca->y || abs(nova_x - peca->x) == abs(nova_y - peca->y)) {
+            if (nova_x == peca->x || nova_y == peca->y) { // Movimento horizontal ou vertical
+                int direcao_x = (nova_x > peca->x) ? 1 : -1;
+                int direcao_y = (nova_y > peca->y) ? 1 : -1;
+                for (int i = 1; i < abs(nova_x - peca->x); i++) {
+                    if (tabuleiro[peca->x + i * direcao_x][peca->y + i * direcao_y] != '.') {
+                        return 0; // Há uma peça no caminho
+                    }
+                }
+                return 1;
+            } else if (abs(nova_x - peca->x) == abs(nova_y - peca->y)) { // Movimento diagonal
+                int direcao_x = (nova_x > peca->x) ? 1 : -1;
+                int direcao_y = (nova_y > peca->y) ? 1 : -1;
+                for (int i = 1; i < abs(nova_x - peca->x); i++) {
+                    if (tabuleiro[peca->x + i * direcao_x][peca->y + i * direcao_y] != '.') {
+                        return 0; // Há uma peça no caminho
+                    }
+                }
                 return 1;
             }
             break;
@@ -146,7 +184,7 @@ int estaEmXeque(Peca pecas[], char corRei) {
     // Verificar se alguma peça adversária pode atacar o Rei
     for (int i = 0; i < 32; i++) {
         if (pecas[i].tipo != '\0' && pecas[i].cor != corRei) {
-            if (validarMovimento(&pecas[i], rei_x, rei_y, pecas)) {
+            if (validarMovimento(&pecas[i], rei_x, rei_y, pecas, NULL)) {
                 return 1; // O Rei está em xeque
             }
         }
@@ -166,7 +204,7 @@ int estaEmXequeMate(Peca pecas[], char corRei) {
         if (pecas[i].tipo != '\0' && pecas[i].cor == corRei) {
             for (int x = 0; x < TAMANHO_TABULEIRO; x++) {
                 for (int y = 0; y < TAMANHO_TABULEIRO; y++) {
-                    if (validarMovimento(&pecas[i], x, y, pecas)) {
+                    if (validarMovimento(&pecas[i], x, y, pecas, NULL)) {
                         // Simular o movimento
                         int antiga_x = pecas[i].x;
                         int antiga_y = pecas[i].y;
@@ -193,45 +231,7 @@ int estaEmXequeMate(Peca pecas[], char corRei) {
     return 1; // Xeque-mate
 }
 
-// Função para realizar o roque
-int realizarRoque(Peca *rei, Peca *torre, Peca pecas[], char tabuleiro[TAMANHO_TABULEIRO][TAMANHO_TABULEIRO]) {
-    if (rei->movida || torre->movida) {
-        return 0; // O Rei ou a Torre já se moveram
-    }
-
-    int direcao = (torre->y > rei->y) ? 1 : -1;
-    int nova_y_rei = rei->y + 2 * direcao;
-
-    // Verificar se há peças entre o Rei e a Torre
-    for (int y = rei->y + direcao; y != torre->y; y += direcao) {
-        if (tabuleiro[rei->x][y] != '.') {
-            return 0; // Há uma peça no caminho
-        }
-    }
-
-    // Verificar se o Rei passará por casas atacadas
-    for (int y = rei->y; y != nova_y_rei; y += direcao) {
-        if (estaEmXeque(pecas, rei->cor)) {
-            return 0; // O Rei está em xeque ou passará por uma casa atacada
-        }
-    }
-
-    // Realizar o roque
-    tabuleiro[rei->x][rei->y] = '.';
-    rei->y = nova_y_rei;
-    tabuleiro[rei->x][rei->y] = rei->nome[0];
-
-    tabuleiro[torre->x][torre->y] = '.';
-    torre->y = rei->y - direcao;
-    tabuleiro[torre->x][torre->y] = torre->nome[0];
-
-    rei->movida = 1;
-    torre->movida = 1;
-
-    return 1;
-}
-
-// Função para verificar e realizar En Passant
+// Função para realizar En Passant
 int realizarEnPassant(Peca *peao, int destino_x, int destino_y, Peca pecas[], char tabuleiro[TAMANHO_TABULEIRO][TAMANHO_TABULEIRO]) {
     if (peao->cor == 'B') { // Peão branco
         if (destino_x == 2 && destino_y == ultimo_movimento_peao_y &&
@@ -316,10 +316,10 @@ int main() {
         scanf("%s", entrada);
 
         // Converter entrada para coordenadas
-        int origem_x = 8 - (entrada[1] - '0');
-        int origem_y = entrada[0] - 'a';
-        int destino_x = 8 - (entrada[4] - '0');
-        int destino_y = entrada[3] - 'a';
+        int origem_x = 8 - (entrada[1] - '0'); // Linha de origem
+        int origem_y = entrada[0] - 'a';      // Coluna de origem
+        int destino_x = 8 - (entrada[4] - '0'); // Linha de destino
+        int destino_y = entrada[3] - 'a';     // Coluna de destino
 
         // Encontrar a peça
         Peca *peca_selecionada = NULL;
@@ -331,12 +331,12 @@ int main() {
         }
 
         if (!peca_selecionada) {
-            printf("Movimento inválido! Tente novamente.\n");
+            printf("Erro: Não há peça na posição %c%d ou ela não pertence ao jogador atual.\n", entrada[0], 8 - (entrada[1] - '0'));
             continue;
         }
 
         // Validar o movimento
-        if (!validarMovimento(peca_selecionada, destino_x, destino_y, pecas)) {
+        if (!validarMovimento(peca_selecionada, destino_x, destino_y, pecas, tabuleiro)) {
             printf("Movimento inválido! Tente novamente.\n");
             continue;
         }

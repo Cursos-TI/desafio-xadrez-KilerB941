@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #define TAMANHO_TABULEIRO 8
 
@@ -8,6 +9,7 @@ typedef struct {
     char nome[3]; // Nome da peça (ex: "P1", "T1")
     char tipo;    // Tipo da peça ('P' = Peão, 'T' = Torre, etc.)
     int x, y;     // Posição no tabuleiro
+    char cor;     // Cor da peça ('B' = Branca, 'P' = Preta)
 } Peca;
 
 // Função para inicializar o tabuleiro
@@ -50,11 +52,26 @@ int validarMovimento(Peca *peca, int nova_x, int nova_y, Peca pecas[]) {
     // Regras específicas para cada tipo de peça
     switch (peca->tipo) {
         case 'P': // Peão
-            if (peca->x == 6 && nova_x == 4 && peca->y == nova_y) { // Primeiro movimento do Peão
-                return 1;
-            }
-            if (nova_x == peca->x - 1 && nova_y == peca->y) { // Movimento normal do Peão
-                return 1;
+            if (peca->cor == 'B') { // Peão branco
+                if (peca->x == 6 && nova_x == 4 && peca->y == nova_y) { // Primeiro movimento do Peão
+                    return 1;
+                }
+                if (nova_x == peca->x - 1 && nova_y == peca->y) { // Movimento normal do Peão
+                    return 1;
+                }
+                if (nova_x == peca->x - 1 && abs(nova_y - peca->y) == 1) { // Captura diagonal
+                    return 1;
+                }
+            } else { // Peão preto
+                if (peca->x == 1 && nova_x == 3 && peca->y == nova_y) { // Primeiro movimento do Peão
+                    return 1;
+                }
+                if (nova_x == peca->x + 1 && nova_y == peca->y) { // Movimento normal do Peão
+                    return 1;
+                }
+                if (nova_x == peca->x + 1 && abs(nova_y - peca->y) == 1) { // Captura diagonal
+                    return 1;
+                }
             }
             break;
 
@@ -96,6 +113,18 @@ int validarMovimento(Peca *peca, int nova_x, int nova_y, Peca pecas[]) {
     return 0;
 }
 
+// Função para capturar uma peça
+void capturarPeca(Peca pecas[], int nova_x, int nova_y) {
+    for (int i = 0; i < 32; i++) {
+        if (pecas[i].x == nova_x && pecas[i].y == nova_y) {
+            pecas[i].tipo = '\0'; // Remove a peça capturada
+            pecas[i].x = -1;
+            pecas[i].y = -1;
+            break;
+        }
+    }
+}
+
 // Função principal
 int main() {
     char tabuleiro[TAMANHO_TABULEIRO][TAMANHO_TABULEIRO];
@@ -103,35 +132,37 @@ int main() {
 
     // Inicializar as peças
     // Peças brancas
-    strcpy(pecas[0].nome, "T1"); pecas[0].tipo = 'T'; pecas[0].x = 7; pecas[0].y = 0;
-    strcpy(pecas[1].nome, "C1"); pecas[1].tipo = 'C'; pecas[1].x = 7; pecas[1].y = 1;
-    strcpy(pecas[2].nome, "B1"); pecas[2].tipo = 'B'; pecas[2].x = 7; pecas[2].y = 2;
-    strcpy(pecas[3].nome, "Q1"); pecas[3].tipo = 'Q'; pecas[3].x = 7; pecas[3].y = 3;
-    strcpy(pecas[4].nome, "K1"); pecas[4].tipo = 'K'; pecas[4].x = 7; pecas[4].y = 4;
-    strcpy(pecas[5].nome, "B2"); pecas[5].tipo = 'B'; pecas[5].x = 7; pecas[5].y = 5;
-    strcpy(pecas[6].nome, "C2"); pecas[6].tipo = 'C'; pecas[6].x = 7; pecas[6].y = 6;
-    strcpy(pecas[7].nome, "T2"); pecas[7].tipo = 'T'; pecas[7].x = 7; pecas[7].y = 7;
+    strcpy(pecas[0].nome, "T1"); pecas[0].tipo = 'T'; pecas[0].x = 7; pecas[0].y = 0; pecas[0].cor = 'B';
+    strcpy(pecas[1].nome, "C1"); pecas[1].tipo = 'C'; pecas[1].x = 7; pecas[1].y = 1; pecas[1].cor = 'B';
+    strcpy(pecas[2].nome, "B1"); pecas[2].tipo = 'B'; pecas[2].x = 7; pecas[2].y = 2; pecas[2].cor = 'B';
+    strcpy(pecas[3].nome, "Q1"); pecas[3].tipo = 'Q'; pecas[3].x = 7; pecas[3].y = 3; pecas[3].cor = 'B';
+    strcpy(pecas[4].nome, "K1"); pecas[4].tipo = 'K'; pecas[4].x = 7; pecas[4].y = 4; pecas[4].cor = 'B';
+    strcpy(pecas[5].nome, "B2"); pecas[5].tipo = 'B'; pecas[5].x = 7; pecas[5].y = 5; pecas[5].cor = 'B';
+    strcpy(pecas[6].nome, "C2"); pecas[6].tipo = 'C'; pecas[6].x = 7; pecas[6].y = 6; pecas[6].cor = 'B';
+    strcpy(pecas[7].nome, "T2"); pecas[7].tipo = 'T'; pecas[7].x = 7; pecas[7].y = 7; pecas[7].cor = 'B';
     for (int i = 0; i < 8; i++) {
         sprintf(pecas[8 + i].nome, "P%d", i + 1);
         pecas[8 + i].tipo = 'P';
         pecas[8 + i].x = 6;
         pecas[8 + i].y = i;
+        pecas[8 + i].cor = 'B';
     }
 
     // Peças pretas
-    strcpy(pecas[16].nome, "T1"); pecas[16].tipo = 'T'; pecas[16].x = 0; pecas[16].y = 0;
-    strcpy(pecas[17].nome, "C1"); pecas[17].tipo = 'C'; pecas[17].x = 0; pecas[17].y = 1;
-    strcpy(pecas[18].nome, "B1"); pecas[18].tipo = 'B'; pecas[18].x = 0; pecas[18].y = 2;
-    strcpy(pecas[19].nome, "Q1"); pecas[19].tipo = 'Q'; pecas[19].x = 0; pecas[19].y = 3;
-    strcpy(pecas[20].nome, "K1"); pecas[20].tipo = 'K'; pecas[20].x = 0; pecas[20].y = 4;
-    strcpy(pecas[21].nome, "B2"); pecas[21].tipo = 'B'; pecas[21].x = 0; pecas[21].y = 5;
-    strcpy(pecas[22].nome, "C2"); pecas[22].tipo = 'C'; pecas[22].x = 0; pecas[22].y = 6;
-    strcpy(pecas[23].nome, "T2"); pecas[23].tipo = 'T'; pecas[23].x = 0; pecas[23].y = 7;
+    strcpy(pecas[16].nome, "T1"); pecas[16].tipo = 'T'; pecas[16].x = 0; pecas[16].y = 0; pecas[16].cor = 'P';
+    strcpy(pecas[17].nome, "C1"); pecas[17].tipo = 'C'; pecas[17].x = 0; pecas[17].y = 1; pecas[17].cor = 'P';
+    strcpy(pecas[18].nome, "B1"); pecas[18].tipo = 'B'; pecas[18].x = 0; pecas[18].y = 2; pecas[18].cor = 'P';
+    strcpy(pecas[19].nome, "Q1"); pecas[19].tipo = 'Q'; pecas[19].x = 0; pecas[19].y = 3; pecas[19].cor = 'P';
+    strcpy(pecas[20].nome, "K1"); pecas[20].tipo = 'K'; pecas[20].x = 0; pecas[20].y = 4; pecas[20].cor = 'P';
+    strcpy(pecas[21].nome, "B2"); pecas[21].tipo = 'B'; pecas[21].x = 0; pecas[21].y = 5; pecas[21].cor = 'P';
+    strcpy(pecas[22].nome, "C2"); pecas[22].tipo = 'C'; pecas[22].x = 0; pecas[22].y = 6; pecas[22].cor = 'P';
+    strcpy(pecas[23].nome, "T2"); pecas[23].tipo = 'T'; pecas[23].x = 0; pecas[23].y = 7; pecas[23].cor = 'P';
     for (int i = 0; i < 8; i++) {
         sprintf(pecas[24 + i].nome, "P%d", i + 1);
         pecas[24 + i].tipo = 'P';
         pecas[24 + i].x = 1;
         pecas[24 + i].y = i;
+        pecas[24 + i].cor = 'P';
     }
 
     // Inicializar o tabuleiro
@@ -167,6 +198,14 @@ int main() {
         if (!validarMovimento(peca_selecionada, nova_x, nova_y, pecas)) {
             printf("Movimento inválido!\n");
             continue;
+        }
+
+        // Verificar se há uma peça na posição de destino
+        for (int i = 0; i < 32; i++) {
+            if (pecas[i].x == nova_x && pecas[i].y == nova_y && pecas[i].cor != peca_selecionada->cor) {
+                capturarPeca(pecas, nova_x, nova_y);
+                break;
+            }
         }
 
         // Atualizar a posição da peça

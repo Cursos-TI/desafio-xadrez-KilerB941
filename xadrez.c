@@ -4,7 +4,6 @@
 // Este código inicial serve como base para o desenvolvimento do sistema de movimentação das peças de xadrez.
 // O objetivo é utilizar estruturas de repetição e funções para determinar os limites de movimentação dentro do jogo.
 
-#include <stdio.h>
 
 int main() {
     // Simulação do movimento da Torre usando FOR
@@ -33,6 +32,24 @@ int main() {
         printf("Esquerda\n"); // A Rainha se move para a esquerda
         contador_rainha++;
     } while (contador_rainha <= rainha_movimentos);
+    printf("\n");
+
+    // Simulação do movimento do Cavalo usando loops aninhados
+    printf("Movimento do Cavalo:\n");
+    int cavalo_movimentos_vertical = 2; // Número de casas que o Cavalo se move para baixo
+    int cavalo_movimentos_horizontal = 1; // Número de casas que o Cavalo se move para a esquerda
+
+    // Loop externo: Movimento vertical (Baixo)
+    for (int i = 1; i <= cavalo_movimentos_vertical; i++) {
+        printf("Baixo\n"); // O Cavalo se move duas casas para baixo
+    }
+
+    // Loop interno: Movimento horizontal (Esquerda)
+    int contador_cavalo_horizontal = 1;
+    while (contador_cavalo_horizontal <= cavalo_movimentos_horizontal) {
+        printf("Esquerda\n"); // O Cavalo se move uma casa para a esquerda
+        contador_cavalo_horizontal++;
+    }
 
     return 0;
 }

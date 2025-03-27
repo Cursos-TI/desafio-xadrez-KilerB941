@@ -13,6 +13,10 @@ typedef struct {
     int movida;   // Indica se a peça já foi movida (para roque e en passant)
 } Peca;
 
+// Variável global para armazenar o último movimento de Peão para verificar En Passant
+int ultimo_movimento_peao_x = -1;
+int ultimo_movimento_peao_y = -1;
+
 // Função para inicializar o tabuleiro
 void inicializarTabuleiro(char tabuleiro[TAMANHO_TABULEIRO][TAMANHO_TABULEIRO], Peca pecas[]) {
     // Limpar o tabuleiro
@@ -227,6 +231,26 @@ int realizarRoque(Peca *rei, Peca *torre, Peca pecas[], char tabuleiro[TAMANHO_T
     return 1;
 }
 
+// Função para verificar e realizar En Passant
+int realizarEnPassant(Peca *peao, int destino_x, int destino_y, Peca pecas[], char tabuleiro[TAMANHO_TABULEIRO][TAMANHO_TABULEIRO]) {
+    if (peao->cor == 'B') { // Peão branco
+        if (destino_x == 2 && destino_y == ultimo_movimento_peao_y &&
+            pecas[ultimo_movimento_peao_x].x == 3 && pecas[ultimo_movimento_peao_x].y == destino_y) {
+            // Capturar o Peão adversário
+            capturarPeca(pecas, 3, destino_y);
+            return 1;
+        }
+    } else { // Peão preto
+        if (destino_x == 5 && destino_y == ultimo_movimento_peao_y &&
+            pecas[ultimo_movimento_peao_x].x == 4 && pecas[ultimo_movimento_peao_x].y == destino_y) {
+            // Capturar o Peão adversário
+            capturarPeca(pecas, 4, destino_y);
+            return 1;
+        }
+    }
+    return 0;
+}
+
 // Função principal
 int main() {
     char tabuleiro[TAMANHO_TABULEIRO][TAMANHO_TABULEIRO];
@@ -317,11 +341,16 @@ int main() {
             continue;
         }
 
-        // Verificar se há uma peça na posição de destino
-        for (int i = 0; i < 32; i++) {
-            if (pecas[i].x == destino_x && pecas[i].y == destino_y && pecas[i].cor != peca_selecionada->cor) {
-                capturarPeca(pecas, destino_x, destino_y);
-                break;
+        // Verificar En Passant
+        if (peca_selecionada->tipo == 'P' && realizarEnPassant(peca_selecionada, destino_x, destino_y, pecas, tabuleiro)) {
+            printf("Captura En Passant realizada!\n");
+        } else {
+            // Verificar se há uma peça na posição de destino
+            for (int i = 0; i < 32; i++) {
+                if (pecas[i].x == destino_x && pecas[i].y == destino_y && pecas[i].cor != peca_selecionada->cor) {
+                    capturarPeca(pecas, destino_x, destino_y);
+                    break;
+                }
             }
         }
 
@@ -331,6 +360,15 @@ int main() {
         peca_selecionada->y = destino_y;
         tabuleiro[destino_x][destino_y] = peca_selecionada->nome[0];
         peca_selecionada->movida = 1;
+
+        // Atualizar o último movimento de Peão para En Passant
+        if (peca_selecionada->tipo == 'P' && abs(origem_x - destino_x) == 2) {
+            ultimo_movimento_peao_x = peca_selecionada - pecas; // Índice do Peão no array
+            ultimo_movimento_peao_y = destino_y;
+        } else {
+            ultimo_movimento_peao_x = -1; // Resetar En Passant
+            ultimo_movimento_peao_y = -1;
+        }
 
         // Alternar a vez
         vez = (vez == 'B') ? 'P' : 'B';
